@@ -28,19 +28,7 @@
             --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
         }
 
-        [data-theme="dark"] {
-            --bg-body: #0a0a0a; 
-            --bg-surface: #141414; 
-            --bg-card: #1a1a1a;
-            --text-main: #ffffff;
-            --text-muted: #a3a3a3;
-            --primary: #ffffff; 
-            --primary-hover: #cccccc;
-            --border: #333333;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
-            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
-        }
-
+       
         /* ================= RESET & BASE STYLES ================= */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
@@ -64,12 +52,24 @@
         .btn-outline { background-color: transparent; border: 2px solid var(--primary); color: var(--primary); }
         .btn-outline:hover { background-color: var(--primary); color: #ffffff; }
 
-        /* ================= ANIMATIONS ================= */
-        .fade-in { animation: fadeIn 1.2s ease forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+        /* ================= ANIMATIONS & MOTION TỪ V2 ================= */
+        .fade-in { animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .reveal { opacity: 0; transform: translateY(45px); transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1); }
         .reveal.active { opacity: 1; transform: translateY(0); }
 
+        /* Custom Cursor */
+        body { cursor: none; } /* Ẩn chuột mặc định trên PC */
+        .cursor-dot, .cursor-ring { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 5000; border-radius: 50%; transform: translate(-50%, -50%); mix-blend-mode: difference; }
+        .cursor-dot { width: 6px; height: 6px; background: #fff; }
+        .cursor-ring { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.75); transition: width 0.35s ease, height 0.35s ease, background 0.35s ease; }
+        body.cursor-hover .cursor-ring { width: 68px; height: 68px; background: rgba(255,255,255,.12); }
+        @media (pointer: coarse) { body { cursor: auto; } .cursor-dot, .cursor-ring { display: none; } } /* Trả lại chuột thường cho điện thoại */
+
+        /* Scroll Progress */
+        .scroll-progress { position: fixed; z-index: 3100; left: 0; top: 0; width: 100%; height: 2px; }
+        .scroll-progress span { display: block; width: 0; height: 100%; background: var(--primary); transition: width 0.1s; }
         /* ================= HEADER & NAVIGATION ================= */
         header { position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; background-color: transparent; transition: all 0.3s ease; padding: 20px 0; }
         header.scrolled { background-color: var(--bg-surface); box-shadow: var(--shadow); padding: 15px 0; }
@@ -79,8 +79,7 @@
         .nav-links { display: flex; gap: 30px; align-items: center; }
         .nav-links li a { font-weight: 500; transition: color 0.3s ease; }
         .nav-links li a:hover { color: var(--secondary); }
-        .theme-toggle { background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer; transition: color 0.3s; }
-        .theme-toggle:hover { color: var(--secondary); }
+       
         .mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-main); cursor: pointer; }
 
         /* ================= HERO SECTION ================= */
@@ -216,9 +215,38 @@
             .hero-buttons { justify-content: center; }
             .contact-methods { grid-template-columns: 1fr; gap: 20px; }
         }
+ /* Ẩn khối wave lấp chỗ theo mặc định trên PC/Mobile */
+        .tablet-filler {
+            display: none !important;
+        }
+
+        /* XỬ LÝ MÀN HÌNH NHỠ & TABLET (Tăng max-width lên 1090px để bắt kịp lúc rớt dòng) */
+        @media (min-width: 769px) and (max-width: 1090px) {
+            
+            /* 1. Ép tất cả các phần Kỹ năng, Kinh nghiệm, Dự án thành 2 cột */
+            .skills-grid, 
+            #projects .projects-grid, 
+            #portfolio .projects-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* 2. BẬT khối wave sơ cua để lấp chỗ trống kế bên "Freelance Designer" */
+            #projects .tablet-filler {
+                display: flex !important; 
+                grid-column: span 1 !important; 
+            }
+
+            /* 3. TẮT khối wave gốc ở phần Dự án vì 4 ô đã lấp đầy 2 hàng (2x2) */
+            #portfolio .motion-card {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
+    <div class="scroll-progress"><span id="progressBar"></span></div>
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="cursor-ring" id="cursorRing"></div>
 
     <!-- HEADER / NAVBAR -->
     <header id="header">
@@ -235,9 +263,7 @@
             </ul>
 
             <div style="display: flex; gap: 20px; align-items: center;">
-                <button class="theme-toggle" id="themeToggle" aria-label="Đổi giao diện">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
+
                 <button class="mobile-menu-btn" id="mobileMenuBtn">
                     <i class="fa-solid fa-bars"></i>
                 </button>
@@ -327,8 +353,8 @@
                 </div> <!-- ĐÂY LÀ THẺ ĐÓNG CỦA SKILLS-GRID. DÒNG CHỮ PHẢI NẰM DƯỚI THẺ NÀY -->
                 
                 <!-- Dòng text Kỹ năng khác (Đã thêm width: 100% và display: block để ép ra giữa) -->
-                <p class="reveal" style="display: block; width: 100%; text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-top: 30px; font-style: italic; white-space: nowrap;">
-                    Kỹ năng phụ trợ: Sound design, lên ý tưởng, sự dụng AI.
+                <p class="reveal" style="display: block; width: 100%; text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-top: 30px; font-style: italic;">
+                    Kỹ năng phụ trợ: Sound design, lên ý tưởng, sử dụng AI.
                 </p>
                 </div>
             </div>
@@ -362,7 +388,7 @@
                             <h3 class="project-title">Freelancer <p>Khoa Mĩ Thuật<p>Thiết Kế</h3>
                             <span class="project-year">2024<p>2025</span>
                         </div>
-                        <div class="project-role">Editor & Visual Assistant</div>
+                        <div class="project-role">Media</div>
                         <div class="project-desc">
                             <ul>
                                 <li>Thực hiện cùng khoa Mỹ Thuật - Thiết Kế đảm nhận các dự án sự kiện của khoa và trường.</li>
@@ -389,6 +415,12 @@
                             </ul>
                         </div>
                     </div>
+                    <div class="project-card motion-card reveal tablet-filler">
+                        <div class="wave wave-1"></div>
+                        <div class="wave wave-2"></div>
+                        <div class="wave wave-3"></div>
+                        <div class="wave wave-4"></div>
+                    </div>
 
                 </div>
             </div>
@@ -410,20 +442,20 @@
                         <div class="project-desc">
                             <p style="margin-bottom: 10px;">Thực hiện compositing các cảnh quay ngắn và xử lý hiệu ứng hình ảnh cho chuỗi video truyền thông của trường Đại học Văn Lang.</p>
                             <!-- Nút xem dự án (Thay dấu # bằng link thật) -->
-                            <a href="https://www.youtube.com/watch?v=GBIIQ0kP15E" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Video</a>
+                            <a href="https://drive.google.com/drive/folders/18dSW-DT0OjJD-GrE9_wG6HnS0STXuz-C?usp=drive_link" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Video</a>
                         </div>
                     </div>
 
                     <!-- Dự án 2 -->
                     <div class="project-card">
                         <div class="project-header">
-                            <h3 class="project-title">Visual LED Sự kiện</h3>
+                            <h3 class="project-title">Visual LED</h3>
                             <span class="project-year">2024</span>
                         </div>
                         <div class="project-role">Motion Graphic Designer</div>
                         <div class="project-desc">
                             <p style="margin-bottom: 10px;">Thiết kế và xử lý chuyển động cho hệ thống màn hình LED tại các sự kiện lớn của Khoa Mỹ Thuật - Thiết Kế.</p>
-                            <a href="https://www.youtube.com/watch?v=GBIIQ0kP15E" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Visual</a>
+                            <a href="https://drive.google.com/drive/folders/1sD1nh0oKyf-4OKMWhO0bufo2F0NRBkk1?usp=drive_link" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Visual</a>
                         </div>
                     </div>
 
@@ -436,7 +468,7 @@
                         <div class="project-role">Designer Ấn phẩm</div>
                         <div class="project-desc">
                             <p style="margin-bottom: 10px;">Đảm nhận thiết kế đồng bộ bộ ấn phẩm truyền thông bao gồm Poster, Standee và Backdrop cho sự kiện BLACKMASTER EP01.</p>
-                            <a href="https://www.youtube.com/watch?v=GBIIQ0kP15E" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Thiết kế</a>
+                            <a href="https://drive.google.com/drive/folders/1VK7lvrTl2PscRNGeNjhC4gu_m7iodILe?usp=drive_link" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Thiết kế</a>
                         </div>
                     </div>
                     <!-- Dự án 4 (Thêm mới) -->
@@ -449,7 +481,7 @@
                         <div class="project-desc">
                             <p style="margin-bottom: 10px;">Thực hiện thiết kế các ấn phẩm truyền thông (GURADIAN Đà Nẵng, AEON Mall Bình Tân, VinaWoodTech) và xử lý video/hình ảnh sự kiện.</p>
                             <!-- Nhớ thay dấu # thành link tổng hợp các dự án này nhé -->
-                            <a href="https://www.youtube.com/watch?v=GBIIQ0kP15E" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Chi Tiết</a>
+                            <a href="https://drive.google.com/drive/folders/1Nq6Hn6TXJ4WEAFCPMbpdFrSKm8l0des5?usp=drive_link" target="_blank" class="btn btn-outline" style="padding: 8px 15px; font-size: 0.9rem; margin-top: 10px; display: inline-block;">Xem Chi Tiết</a>
                         </div>
                     </div>
                     <!-- Ô Hiệu ứng Motion Wave (Kế bên Dự án 4) -->
@@ -511,93 +543,76 @@
 
     <!-- JAVASCRIPT -->
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
-
-        const themeToggle = document.getElementById('themeToggle');
-        const rootElement = document.documentElement;
-        const iconElement = themeToggle.querySelector('i');
-
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            rootElement.setAttribute('data-theme', 'dark');
-            iconElement.classList.replace('fa-moon', 'fa-sun');
-        }
-
-        themeToggle.addEventListener('click', () => {
-            if (rootElement.getAttribute('data-theme') === 'dark') {
-                rootElement.removeAttribute('data-theme');
-                localStorage.setItem('theme', 'light');
-                iconElement.classList.replace('fa-sun', 'fa-moon');
-            } else {
-                rootElement.setAttribute('data-theme', 'dark');
-                localStorage.setItem('theme', 'dark');
-                iconElement.classList.replace('fa-moon', 'fa-sun');
-            }
-        });
-
-        const header = document.getElementById('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        });
-
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navLinks = document.querySelector('.nav-links');
-        const mobileIcon = mobileMenuBtn.querySelector('i');
-
-        mobileMenuBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-            if (navLinks.classList.contains('active')) {
-                mobileIcon.classList.replace('fa-bars', 'fa-xmark');
-            } else {
-                mobileIcon.classList.replace('fa-xmark', 'fa-bars');
-            }
-        });
-
-        document.querySelectorAll('.nav-links li a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                mobileIcon.classList.replace('fa-xmark', 'fa-bars');
-            });
-        });
-
-        /* 5. HIỆU ỨNG REVEAL (HIỆN RA KHI CUỘN TỚI & RESET KHI CUỘN ĐI) */
-        const reveals = document.querySelectorAll('.reveal');
+        /* ================= HIỆU ỨNG MOTION JS TỪ V2 ================= */
         
-        const revealOnScroll = () => {
-            const windowHeight = window.innerHeight;
-            const elementVisible = 100;
+        // 1. Thanh tiến trình cuộn (Scroll Progress)
+        const progressBar = document.getElementById('progressBar');
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY;
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            if (progressBar) progressBar.style.width = maxScroll > 0 ? `${(scrollTop / maxScroll) * 100}%` : '0%';
+        }, { passive: true });
 
-            reveals.forEach(reveal => {
-                const elementTop = reveal.getBoundingClientRect().top;
-                const elementBottom = reveal.getBoundingClientRect().bottom;
-
-                // TÁCH RIÊNG ĐIỀU KIỆN CHO Ô MOTION WAVE (Khắt khe hơn)
-                if (reveal.classList.contains('motion-card')) {
-                    // Hiệu ứng chỉ chạy khi ô này nằm lọt hẳn vào khu vực giữa màn hình.
-                    // Nếu lướt tới "Liên hệ" (elementBottom < 200) hoặc lướt ngược lên (elementTop > windowHeight - 200), nó sẽ tự tắt.
-                    if (elementTop < windowHeight - 200 && elementBottom > 200) {
-                        reveal.classList.add('active');
-                    } else {
-                        reveal.classList.remove('active'); // Revert về trạng thái trống (0)
-                    }
+        // 2. Intersection Observer (Kích hoạt mượt mà hơn hàm Scroll cũ)
+        const revealObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // THÊM DÒNG NÀY: Ngừng theo dõi phần tử sau khi nó đã xuất hiện 1 lần
+                    // Việc này giúp thẻ không bị mất class 'active' và triệt tiêu hoàn toàn lỗi giật wave
+                    observer.unobserve(entry.target); 
                 } 
-                // ĐIỀU KIỆN DÀNH CHO CÁC THẺ BÌNH THƯỜNG KHÁC (Giữ nguyên)
-                else {
-                    if (elementTop < windowHeight - elementVisible && elementBottom > 0) {
-                        reveal.classList.add('active');
-                    } else {
-                        reveal.classList.remove('active');
-                    }
-                }
+                // ĐÃ XÓA phần 'else' ở đây để không tự động reset hiệu ứng nữa
             });
-        };
+        }, { threshold: 0.12, rootMargin: '0px 0px -7% 0px' });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-        window.addEventListener('scroll', revealOnScroll);
-        revealOnScroll();
+        // 3. Con trỏ chuột tùy chỉnh (Custom Cursor)
+        const cursorDot = document.getElementById('cursorDot');
+        const cursorRing = document.getElementById('cursorRing');
+        let pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2;
+        let ringX = pointerX, ringY = pointerY;
+
+        window.addEventListener('pointermove', (e) => {
+            pointerX = e.clientX; pointerY = e.clientY;
+            if (cursorDot) { cursorDot.style.left = `${pointerX}px`; cursorDot.style.top = `${pointerY}px`; }
+        }, { passive: true });
+
+        function cursorLoop() {
+            ringX += (pointerX - ringX) * 0.14;
+            ringY += (pointerY - ringY) * 0.14;
+            if (cursorRing) { cursorRing.style.left = `${ringX}px`; cursorRing.style.top = `${ringY}px`; }
+            requestAnimationFrame(cursorLoop);
+        }
+        cursorLoop();
+
+        // Kích hoạt viền chuột to ra khi di qua các thẻ tương tác
+        document.querySelectorAll('a, button, .project-card, .skill-card').forEach(el => {
+            el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+            el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+        });
+
+        // 4. Hiệu ứng Tilt 3D cho thẻ (Chỉ bật trên PC)
+        if (window.matchMedia('(pointer: fine)').matches) {
+            document.querySelectorAll('.project-card, .skill-card').forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    // Không áp dụng Tilt cho ô Wave
+                    if(card.classList.contains('motion-card')) return; 
+                    
+                    const rect = card.getBoundingClientRect();
+                    const px = (e.clientX - rect.left) / rect.width;
+                    const py = (e.clientY - rect.top) / rect.height;
+                    const rx = (0.5 - py) * 8; 
+                    const ry = (px - 0.5) * 8;
+                    card.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg) translateY(-8px)`;
+                    card.style.transition = 'none'; // Bỏ delay để thẻ xoay mượt theo chuột
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = '';
+                    card.style.transition = 'all 0.3s ease'; // Trả lại trạng thái cũ
+                });
+            });
+        }
     </script>
 </body>
 </html>
